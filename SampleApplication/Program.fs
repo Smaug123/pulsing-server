@@ -13,11 +13,9 @@ open Microsoft.Extensions.Logging
 
 module Program =
     let createHostBuilder args =
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(fun webBuilder ->
-                webBuilder.UseStartup<Startup>()
-                |> ignore
-            )
+        Host
+            .CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(fun webBuilder -> webBuilder.UseStartup<Startup> () |> ignore)
 
     [<EntryPoint>]
     let main args =

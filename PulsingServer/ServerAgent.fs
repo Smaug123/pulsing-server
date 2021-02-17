@@ -4,7 +4,7 @@ type private ServerAgentMessage<'info> =
     | Read of AsyncReplyChannel<unit> * ('info -> unit)
     | Write of AsyncReplyChannel<unit> * 'info
 
-type ServerAgent<'info> = private | ServerAgent of MailboxProcessor<ServerAgentMessage<'info>>
+type ServerAgent<'info> = private ServerAgent of MailboxProcessor<ServerAgentMessage<'info>>
 
 [<RequireQualifiedAccess>]
 module ServerAgent =
@@ -39,7 +39,10 @@ module ServerAgent =
     /// the async returns once the ServerAgent has finished responding.
     let giveNextResponse<'info> (ServerAgent agent) : Async<'info> =
         let mutable answer = Unchecked.defaultof<'info>
-        let result = agent.PostAndAsyncReply (fun channel -> Read (channel, fun info -> answer <- info))
+
+        let result =
+            agent.PostAndAsyncReply (fun channel -> Read (channel, (fun info -> answer <- info)))
+
         async {
             do! result
             return answer

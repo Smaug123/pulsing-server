@@ -11,9 +11,7 @@ type private ExternalInfoProviderMessage<'info> =
 
 /// An entity which periodically pulls information from some external source
 /// and pushes it out to a collection of ServerAgents.
-type ExternalInfoProvider<'info> =
-    private
-    | ExternalInfoProvider of MailboxProcessor<ExternalInfoProviderMessage<'info>>
+type ExternalInfoProvider<'info> = private ExternalInfoProvider of MailboxProcessor<ExternalInfoProviderMessage<'info>>
 
 [<RequireQualifiedAccess>]
 module ExternalInfoProvider =
@@ -29,14 +27,18 @@ module ExternalInfoProvider =
         (receivers : ServerAgent<'info> array)
         : Async<ExternalInfoProvider<'info>>
         =
-        let rec loop (info : 'info option) (receivers : ServerAgent<'info> array) (mailbox : MailboxProcessor<ExternalInfoProviderMessage<'info>>) =
+        let rec loop
+            (info : 'info option)
+            (receivers : ServerAgent<'info> array)
+            (mailbox : MailboxProcessor<ExternalInfoProviderMessage<'info>>)
+            =
             async {
                 match! mailbox.Receive () with
                 | Get (channel, timeout) ->
                     let! newInfo = get
+
                     match info with
-                    | Some info when newInfo = info ->
-                        ()
+                    | Some info when newInfo = info -> ()
                     | _ ->
                         do!
                             receivers
@@ -46,8 +48,8 @@ module ExternalInfoProvider =
 
                     match channel with
                     | None -> ()
-                    | Some channel ->
-                        channel.Reply ()
+                    | Some channel -> channel.Reply ()
+
                     do! sleep (TimeSpan.FromMilliseconds (float timeout))
                     // There's a small inaccuracy here. We actually will wait until the end
                     // of a timeout cycle before we can process any new consumers. What we
@@ -63,11 +65,11 @@ module ExternalInfoProvider =
             }
 
         async {
-            let mailbox = MailboxProcessor.Start (loop None receivers)
+            let mailbox =
+                MailboxProcessor.Start (loop None receivers)
+
             do! mailbox.PostAndAsyncReply (fun channel -> Get (Some channel, timer))
-            return
-                mailbox
-                |> ExternalInfoProvider
+            return mailbox |> ExternalInfoProvider
         }
 
     /// Replace the collection of ServerAgents this ExternalInfoProvider is hooked up to.
